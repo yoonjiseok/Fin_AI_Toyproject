@@ -12,6 +12,7 @@ class OpenAIService(BaseLLMService):
         self.model = ChatOpenAI(
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_API_BASE,
             temperature=settings.TEMPERATURE
         )
 
