@@ -1,20 +1,17 @@
-from fastapi import APIRouter, Depends
-from app.services.llm_service import OpenAIService, BaseLLMService
+# ai-service/app/api/v1/endpoints.py
+from fastapi import APIRouter
+from app.services.rag_service import RAGService
 from app.models.predict import PredictRequest, PredictResponse
 
 router = APIRouter()
 
-
-def get_llm_service() -> BaseLLMService:
-    return OpenAIService()
+rag_service = RAGService()
 
 
 @router.post("/analyze", response_model=PredictResponse)
-async def analyze_finance(
-        request: PredictRequest,
-        llm_service: BaseLLMService = Depends(get_llm_service)
-):
-    system_msg = "당신은 전문 금융 분석가입니다. 제공된 데이터를 기반으로 인사이트를 제공하세요."
-    result = await llm_service.generate_response(request.query, system_msg)
+async def analyze_finance_rag(request: PredictRequest):
+    result = await rag_service.answer_question(request.query)
 
-    return PredictResponse(answer=result)
+    return PredictResponse(
+        answer=result["answer"]
+    )
