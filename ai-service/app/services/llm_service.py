@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from app.core.config import settings
 
 class BaseLLMService(ABC):
@@ -7,17 +7,15 @@ class BaseLLMService(ABC):
     async def generate_response(self, prompt: str, system_message: str = "") -> str:
         pass
 
-class OpenAIService(BaseLLMService):
+
+class GeminiService(BaseLLMService):
     def __init__(self):
-        self.model = ChatOpenAI(
-            model=settings.OPENAI_MODEL,
-            api_key=settings.OPENAI_API_KEY,
-            base_url=settings.OPENAI_API_BASE,
-            temperature=settings.TEMPERATURE
+        self.model = ChatGoogleGenerativeAI(
+            model="gemini-1.5-flash",
+            google_api_key=settings.GOOGLE_API_KEY
         )
 
     async def generate_response(self, prompt: str, system_message: str = "") -> str:
-
         messages = [
             ("system", system_message),
             ("human", prompt)
