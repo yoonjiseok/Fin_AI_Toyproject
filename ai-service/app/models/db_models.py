@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Text, ForeignKey, DateTime, Float
-from sqlalchemy.dialects.postgresql import UUID, VECTOR
+from sqlalchemy.dialects.postgresql import UUID
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import declarative_base
 import uuid
 import datetime
@@ -18,4 +19,4 @@ class DocumentChunk(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"))
     content = Column(Text, nullable=False)
-    embedding = Column(VECTOR(768))
+    embedding = Column(Vector(768))
