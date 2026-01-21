@@ -11,7 +11,7 @@ class BaseLLMService(ABC):
 class GeminiService(BaseLLMService):
     def __init__(self):
         self.model = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             google_api_key=settings.GOOGLE_API_KEY
         )
 
