@@ -1,45 +1,42 @@
 import uuid
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.db.session import SessionLocal
 from app.db.vector_db import embeddings
 from app.models.db_models import Document, DocumentChunk
 
 
-def ingest_pdf(file_path: str, title: str):
+def ingest_text(text: str, title: str):
     db = SessionLocal()
     try:
-        loader = PyPDFLoader(file_path)
-        pages = loader.load()
 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        chunks = text_splitter.split_documents(pages)
-
-        new_doc = Document(id=uuid.uuid4(), title=title, doc_type="PDF")
+        new_doc = Document(id=uuid.uuid4(), title=title, doc_type="TEXT")
         db.add(new_doc)
-        db.flush()  # ID를 확정하기 위해 실행
+        db.flush()
 
-        for chunk in chunks:
-            vector = embeddings.embed_query(chunk.page_content)
+        content_chunks = text.split("\n")
+
+        for content in content_chunks:
+            if not content.strip(): continue
+
+            vector = embeddings.embed_query(content)
 
             new_chunk = DocumentChunk(
                 document_id=new_doc.id,
-                content=chunk.page_content,
+                content=content,
                 embedding=vector
             )
             db.add(new_chunk)
 
         db.commit()
-        print(f"Successfully ingested {len(chunks)} chunks from {title}")
+        print(f"'{title}' 데이터 주입 성공")
 
     except Exception as e:
         db.rollback()
-        print(f"Error during ingestion: {e}")
+        print(f"데이터 주입 실패: {e}")
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    # 테스트용 샘플 실행 (data 폴더에 PDF가 있다고 가정)
-    # ingest_pdf("data/sample_report.pdf", "Sample Finance Report")
-    pass
+    with open("data/test_report.txt", "r", encoding="utf-8") as f:
+        sample_text = f.read()
+    ingest_text(sample_text, "2026 비트코인 전망")
