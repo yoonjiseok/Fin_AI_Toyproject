@@ -1,14 +1,21 @@
-# Financial AI Agent: Real-time RAG & Analysis System
+# Financial AI Agent: Real-time RAG & Analysis System & KAFA
 
-FastAPI와 Kafka를 활용한 실시간 금융 데이터 분석 및 RAG 기반 질의응답 시스템입니다.
+이 프로젝트는 **실시간 암호화폐 시세 데이터**를 Kafka로 수집하고, 급격한 변동이 감지되면 **RAG(검색 증강 생성)** 기술을 활용해 **AI가 원인을 분석**하여 리포트를 제공하는 **지능형 금융 에이전트**입니다.
 
-## 🛠 Tech Stack
+## Key Features
+
+* **Real-time Data Pipeline**: Upbit WebSocket 데이터를 `Redpanda(Kafka)`를 통해 실시간으로 스트리밍 처리 (무손실 아키텍처).
+* **Event-Driven Architecture**: FastAPI Consumer가 시세 변동을 감지(Anomaly Detection)하여 비동기적으로 AI 분석을 트리거.
+* **RAG (Retrieval-Augmented Generation)**: `PostgreSQL` + `pgvector`에 저장된 금융 리포트를 기반으로 Gemini 1.5 Flash가 근거 있는 답변 생성.
+* **Vector Database**: 3072차원 임베딩(`embedding-001`)을 활용한 유사도 검색.
+
+##  Tech Stack
 - **Backend:** Python, FastAPI
-- **AI/LLM:** LangChain, OpenAI GPT-4o, Ollama (Local LLM)
+- **AI/LLM:** LangChain, GEMINI, GEMINI-embedding
 - **Vector DB:** ChromaDB or pgvector
-- **Event Streaming:** Apache Kafka (Redpanda)
 - **Infrastructure:** Docker, Docker-compose
-
+- **Message Broker**: Redpanda (Kafka Compatible)
+  
 ##  System Architecture
 - [사용자] -> [Main Backend] -> [FastAPI AI Server] -> [Vector DB / LLM]
 - [External API] -> [Kafka Producer] -> [Kafka] -> [AI Server Consumer]
@@ -17,6 +24,12 @@ FastAPI와 Kafka를 활용한 실시간 금융 데이터 분석 및 RAG 기반 �
 
 본 프로젝트는 **PostgreSQL**과 **pgvector**를 사용하여 관계형 데이터와 벡터 데이터를 통합 관리합니다.
 
+##  Architecture
+
+1.  **Ingestion**: `market_producer.py`가 Upbit Websocket 데이터를 수집 → Kafka Topic(`market-prices`)으로 전송.
+2.  **Detection**: FastAPI Server(`market_consumer.py`)가 Kafka 데이터를 구독 중 급변동 감지.
+3.  **Retrieval**: `document_chunks` 테이블에서 관련 금융 지식/리포트 벡터 검색.
+4.  **Generation**: 검색된 컨텍스트(Context)를 바탕으로 Gemini가 변동 원인 분석 리포트 생성.
 ---
 
 ### 1. `documents` (원본 문서 관리)
@@ -40,7 +53,7 @@ RAG 구현을 위해 원본 문서를 조각낸 텍스트와 임베딩 벡터를
 | **id** | `UUID` | **PK** | 청크 고유 식별자 |
 | **document_id** | `UUID` | **FK** | `documents.id` 참조 |
 | **content** | `TEXT` | NOT NULL | 쪼개진 텍스트 본문 |
-| **embedding** | `VECTOR(768)` | - | Gemini 임베딩 모델 기반 벡터 값 |
+| **embedding** | `VECTOR(3072)` | - | Gemini 임베딩 모델 기반 벡터 값 |
 | **page_number** | `INTEGER` | - | (PDF의 경우) 해당 페이지 번호 |
 
 ---
