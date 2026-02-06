@@ -20,7 +20,7 @@
 - [사용자] -> [Main Backend] -> [FastAPI AI Server] -> [Vector DB / LLM]
 - [External API] -> [Kafka Producer] -> [Kafka] -> [AI Server Consumer]
 
-## 🗄️ Database Schema Design
+##  Database Schema Design
 
 본 프로젝트는 **PostgreSQL**과 **pgvector**를 사용하여 관계형 데이터와 벡터 데이터를 통합 관리합니다.
 
@@ -82,6 +82,12 @@ LLM의 Context 유지를 위해 사용자와의 대화 내역을 보관합니다
 | **created_at** | `TIMESTAMP` | DEFAULT | 메시지 생성 일시 |
 
 ---
+데이터 수집
+<img width="907" height="293" alt="image" src="https://github.com/user-attachments/assets/8b435711-40cc-42b9-9e54-b6ca71a76617" />
+---
+AI 답변
+<img width="1016" height="594" alt="image" src="https://github.com/user-attachments/assets/1a15a7c7-739f-4a8b-af38-bfa24b33b319" />
+
 
 > **Design Decision:**
 > - **Hybrid Search**: `pgvector`를 사용함으로써 SQL 기반의 메타데이터 필터링(예: 특정 날짜 이후의 리포트만 검색)과 벡터 유사도 검색을 동시에 수행할 수 있도록 설계했습니다.
