@@ -2,6 +2,7 @@ import asyncio
 import json
 from aiokafka import AIOKafkaConsumer
 from app.services.rag_service import RAGService
+import time
 
 KAFKA_BOOTSTRAP_SERVERS = "localhost:19092"
 TOPIC_NAME = "market-prices"
@@ -12,6 +13,8 @@ class MarketConsumer:
         self.rag_service = RAGService()
         self.last_price = None
         self.running = False
+        self.last_analysis_time = 0
+        self.cooldown_seconds = 60
 
     async def start(self):
         self.running = True
@@ -38,13 +41,21 @@ class MarketConsumer:
 
                 price_diff = current_price - self.last_price
 
-                if abs(price_diff) >= 5000:
-                    print(f" 급변동 감지! 차이: {price_diff}원 (현재가: {current_price})")
+                if abs(price_diff) >= 50000:
 
-                    asyncio.create_task(self.trigger_ai_analysis(current_price, price_diff))
+                    current_time = time.time()
 
+                    if current_time - self.last_analysis_time > self.cooldown_seconds:
+
+                        print(f" 급변동 감지! 차이: {price_diff}원 (현재가: {current_price})")
+
+                        asyncio.create_task(self.trigger_ai_analysis(current_price, price_diff))
+
+                        self.last_analysis_time = current_time
+                    else:
+
+                        pass
                     self.last_price = current_price
-
         except Exception as e:
             print(f"Consumer Error: {e}")
         finally:
@@ -58,7 +69,9 @@ class MarketConsumer:
 
         try:
             result = await self.rag_service.answer_question(query)
-            print(f"[AI 분석 결과]: {result['answer']}")
+            print(f"\n{'=' * 40}")
+            print(f"💡 [AI 분석 결과]\n{result['answer']}")
+            print(f"{'=' * 40}\n")
         except Exception as e:
             print(f"AI Analysis Failed: {e}")
 
