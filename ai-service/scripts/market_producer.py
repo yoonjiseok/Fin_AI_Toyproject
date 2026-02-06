@@ -2,6 +2,8 @@ import asyncio
 import json
 import websockets
 from aiokafka import AIOKafkaProducer
+import ssl
+import certifi
 
 KAFKA_BOOTSTRAP_SERVERS = "localhost:19092"
 TOPIC_NAME = "market-prices"
@@ -16,8 +18,9 @@ async def consume_upbit_and_produce_kafka():
     await producer.start()
     print(f"✅ Connected to Kafka: {KAFKA_BOOTSTRAP_SERVERS}")
 
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
     try:
-        async with websockets.connect(UPBIT_WS_URL) as websocket:
+        async with websockets.connect(UPBIT_WS_URL, ssl=ssl_context) as websocket:
             subscribe_fmt = [
                 {"ticket": "test-uuid"},
                 {"type": "trade", "codes": ["KRW-BTC"], "isOnlyRealtime": True},
