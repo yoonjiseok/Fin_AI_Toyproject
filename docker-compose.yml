@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -10,3 +11,53 @@ services:
       - POSTGRES_DB=findb
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: fin-ai-kafka
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+    ports:
+      - "19092:19092"
+      - "18081:18081"
+      - "18082:18082"
+    volumes:
+      - ./redpanda_data:/var/lib/redpanda/data
+    networks:
+      - fin-ai-network
+
+  console:
+      image: docker.redpanda.com/redpandadata/console:latest
+      container_name: fin-ai-console
+      entrypoint: /bin/sh
+      command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+      environment:
+        CONFIG_FILEPATH: /tmp/config.yml
+        CONSOLE_CONFIG_FILE: |
+          kafka:
+            brokers: ["redpanda:9092"]
+            schemaRegistry:
+              enabled: true
+              urls: ["http://redpanda:8081"]
+          redpanda:
+            adminApi:
+              enabled: true
+              urls: ["http://redpanda:9644"]
+      ports:
+        - "8080:8080"
+      depends_on:
+        - redpanda
+      networks:
+        - fin-ai-network
+
+networks:
+  fin-ai-network:
+      driver: bridge
